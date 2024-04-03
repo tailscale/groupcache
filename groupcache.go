@@ -28,7 +28,6 @@ import (
 	"context"
 	"errors"
 	"math/rand"
-	"strconv"
 	"sync"
 	"sync/atomic"
 
@@ -183,15 +182,15 @@ type flightGroup interface {
 
 // Stats are per-group statistics.
 type Stats struct {
-	Gets           AtomicInt // any Get request, including from peers
-	CacheHits      AtomicInt // either cache was good
-	PeerLoads      AtomicInt // either remote load or remote cache hit (not an error)
-	PeerErrors     AtomicInt
-	Loads          AtomicInt // (gets - cacheHits)
-	LoadsDeduped   AtomicInt // after singleflight
-	LocalLoads     AtomicInt // total good local loads
-	LocalLoadErrs  AtomicInt // total bad local loads
-	ServerRequests AtomicInt // gets that came over the network from peers
+	Gets           atomic.Int64 // any Get request, including from peers
+	CacheHits      atomic.Int64 // either cache was good
+	PeerLoads      atomic.Int64 // either remote load or remote cache hit (not an error)
+	PeerErrors     atomic.Int64
+	Loads          atomic.Int64 // (gets - cacheHits)
+	LoadsDeduped   atomic.Int64 // after singleflight
+	LocalLoads     atomic.Int64 // total good local loads
+	LocalLoadErrs  atomic.Int64 // total bad local loads
+	ServerRequests atomic.Int64 // gets that came over the network from peers
 }
 
 // Name returns the name of the group.
@@ -463,23 +462,6 @@ func (c *cache) itemsLocked() int64 {
 		return 0
 	}
 	return int64(c.lru.Len())
-}
-
-// An AtomicInt is an int64 to be accessed atomically.
-type AtomicInt int64
-
-// Add atomically adds n to i.
-func (i *AtomicInt) Add(n int64) {
-	atomic.AddInt64((*int64)(i), n)
-}
-
-// Get atomically gets the value of i.
-func (i *AtomicInt) Get() int64 {
-	return atomic.LoadInt64((*int64)(i))
-}
-
-func (i *AtomicInt) String() string {
-	return strconv.FormatInt(i.Get(), 10)
 }
 
 // CacheStats are returned by stats accessors on Group.
