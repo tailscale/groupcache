@@ -375,7 +375,7 @@ type orderedFlightGroup struct {
 	orig   flightGroup
 }
 
-func (g *orderedFlightGroup) Do(key string, fn func() (interface{}, error)) (interface{}, error) {
+func (g *orderedFlightGroup) Do(key string, fn func() (interface{}, error)) (interface{}, error, bool) {
 	<-g.stage1
 	<-g.stage2
 	g.mu.Lock()
