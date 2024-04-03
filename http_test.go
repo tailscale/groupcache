@@ -165,3 +165,24 @@ func awaitAddrReady(t *testing.T, addr string, wg *sync.WaitGroup) {
 		time.Sleep(delay)
 	}
 }
+
+func TestHTTPPool_Set(t *testing.T) {
+	// Reset our package globals to allow us to call NewHTTPPoolOpts more
+	// than once per process.
+	httpPoolMade = false
+	portPicker = nil
+
+	p := NewHTTPPoolOpts("http://localhost:8080", nil)
+
+	// Verify that we return a non-nil error when we pass an invalid peer.
+	tests := []string{
+		"ftp://localhost:8080",
+		"localhost:8080",
+		"http:///localhost:8080",
+	}
+	for _, test := range tests {
+		if err := p.Set(test); err == nil {
+			t.Errorf("expected error for invalid peer %q", test)
+		}
+	}
+}

@@ -19,6 +19,7 @@ package groupcache
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -116,7 +117,32 @@ func NewHTTPPoolOpts(self string, o *HTTPPoolOptions) *HTTPPool {
 // Set updates the pool's list of peers.
 // Each peer value should be a valid base URL,
 // for example "http://example.net:8000".
-func (p *HTTPPool) Set(peers ...string) {
+func (p *HTTPPool) Set(peers ...string) error {
+	// Validate that all peers are a valid URL
+	var errs []error
+	for _, peer := range peers {
+		u, err := url.Parse(peer)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("invalid peer URL %q: %w", peer, err))
+			continue
+		}
+
+		// We only support http and https schemes; check for those.
+		if u.Scheme != "http" && u.Scheme != "https" {
+			errs = append(errs, fmt.Errorf("invalid peer URL %q: scheme must be http or https", peer))
+			continue
+		}
+
+		// Defensively check that we have a valid host.
+		if u.Host == "" {
+			errs = append(errs, fmt.Errorf("invalid peer URL %q: missing host", peer))
+			continue
+		}
+	}
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.peers = consistenthash.New(p.opts.Replicas, p.opts.HashFn)
@@ -125,6 +151,7 @@ func (p *HTTPPool) Set(peers ...string) {
 	for _, peer := range peers {
 		p.httpGetters[peer] = &httpGetter{transport: p.Transport, baseURL: peer + p.opts.BasePath}
 	}
+	return nil
 }
 
 func (p *HTTPPool) PickPeer(key string) (ProtoGetter, bool) {
