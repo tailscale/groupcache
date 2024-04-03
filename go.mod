@@ -1,4 +1,4 @@
-module github.com/golang/groupcache
+module github.com/tailscale/groupcache
 
 go 1.22.0
 

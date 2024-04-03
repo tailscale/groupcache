@@ -31,8 +31,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	pb "github.com/golang/groupcache/groupcachepb"
-	"github.com/golang/groupcache/lru"
+	pb "github.com/tailscale/groupcache/groupcachepb"
+	"github.com/tailscale/groupcache/lru"
 	"golang.org/x/sync/singleflight"
 )
 
